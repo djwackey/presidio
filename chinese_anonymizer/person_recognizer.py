@@ -27,15 +27,18 @@ class ChinesePersonRecognizer(PatternRecognizer):
     surnames_pattern = "|".join(COMMON_SURNAMES)
     
     PATTERNS = [
-        # 姓氏 + 1-2个字的名字
+        # 姓氏 + 1-2个字的名字，前后有分隔符或特定上下文
+        Pattern("CHINESE_NAME_WITH_CONTEXT", 
+               rf"(?<=患者|病人|姓名|名字)[\s：:]*({surnames_pattern})[\u4e00-\u9fff]{{1,2}}", 0.95),
+        # 姓氏 + 1-2个字的名字，在句首或标点后
         Pattern("CHINESE_NAME_PATTERN", 
-               rf"\b({surnames_pattern})[\u4e00-\u9fff]{{1,2}}\b", 0.8),
-        # 三字姓名（可能是复姓）
-        Pattern("CHINESE_THREE_CHAR_NAME", 
-               r"\b[\u4e00-\u9fff]{3}\b", 0.6),
-        # 两字姓名
+               rf"(?<=^|[，。！？\s])({surnames_pattern})[\u4e00-\u9fff]{{1,2}}(?=[，。！？\s]|$)", 0.9),
+        # 姓氏 + 名字 + 女士/先生/同志等称谓
+        Pattern("CHINESE_NAME_WITH_TITLE", 
+               rf"({surnames_pattern})[\u4e00-\u9fff]{{1,2}}(?=女士|先生|同志|医生|教授|老师)", 0.95),
+        # 两字姓名，增加上下文限制
         Pattern("CHINESE_TWO_CHAR_NAME", 
-               rf"\b({surnames_pattern})[\u4e00-\u9fff]\b", 0.7),
+               rf"(?<=^|[，。！？\s])({surnames_pattern})[\u4e00-\u9fff](?=[，。！？\s]|$)", 0.8),
     ]
     
     CONTEXT = [
@@ -48,5 +51,5 @@ class ChinesePersonRecognizer(PatternRecognizer):
             supported_entity="PERSON",
             patterns=self.PATTERNS,
             context=self.CONTEXT,
-            supported_language="zh"
+            supported_language="en"  # 使用 "en" 以便与默认配置兼容
         )

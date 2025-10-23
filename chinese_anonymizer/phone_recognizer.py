@@ -33,5 +33,5 @@ class ChinesePhoneRecognizer(PatternRecognizer):
             supported_entity="PHONE_NUMBER",
             patterns=self.PATTERNS,
             context=self.CONTEXT,
-            supported_language="zh"
+            supported_language="en"  # 使用 "en" 以便与默认配置兼容
         )

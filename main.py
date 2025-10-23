@@ -7,11 +7,11 @@ Chinese Text Anonymization Demo Script
 This script demonstrates how to use Presidio for Chinese text anonymization
 """
 
-from presidio_analyzer import AnalyzerEngine
+from presidio_analyzer import AnalyzerEngine, RecognizerRegistry
 from presidio_anonymizer import AnonymizerEngine
+from presidio_anonymizer.entities import OperatorConfig
 from chinese_anonymizer.phone_recognizer import ChinesePhoneRecognizer
 from chinese_anonymizer.person_recognizer import ChinesePersonRecognizer
-from presidio_analyzer import RecognizerRegistry
 
 
 def setup_chinese_analyzer():
@@ -23,13 +23,13 @@ def setup_chinese_analyzer():
     registry.add_recognizer(ChinesePhoneRecognizer())
     registry.add_recognizer(ChinesePersonRecognizer())
     
-    # 加载预定义识别器
-    registry.load_predefined_recognizers()
+    # 不加载默认识别器，避免与 spaCy 的冲突
+    # registry.load_predefined_recognizers()
     
     # 创建分析器
     analyzer = AnalyzerEngine(
         registry=registry,
-        supported_languages=["zh", "en"]
+        supported_languages=["en"]  # 使用 "en" 保持兼容性
     )
     
     return analyzer
@@ -49,7 +49,7 @@ def main():
     anonymizer = AnonymizerEngine()
     
     # 分析文本中的敏感实体
-    results = analyzer.analyze(text=text, language='zh', entities=["PHONE_NUMBER", "PERSON"])
+    results = analyzer.analyze(text=text, language='en', entities=["PHONE_NUMBER", "PERSON"])
     
     print("检测到的实体:")
     for result in results:
@@ -57,11 +57,15 @@ def main():
     print()
     
     # 脱敏处理
+    operators = {
+        "PHONE_NUMBER": OperatorConfig("replace", {"new_value": "<PHONE>"}), 
+        "PERSON": OperatorConfig("replace", {"new_value": "<NAME>"})
+    }
+    
     anonymized_text = anonymizer.anonymize(
         text=text, 
         analyzer_results=results,
-        operators={"PHONE_NUMBER": {"type": "replace", "new_value": "<PHONE>"}, 
-                  "PERSON": {"type": "replace", "new_value": "<NAME>"}}
+        operators=operators
     )
     
     print("脱敏结果:", anonymized_text.text)
@@ -80,12 +84,17 @@ def main():
         print(f"\n测试用例 {i}:")
         print(f"原文: {test_text}")
         
-        results = analyzer.analyze(text=test_text, language='zh', entities=["PHONE_NUMBER", "PERSON"])
+        results = analyzer.analyze(text=test_text, language='en', entities=["PHONE_NUMBER", "PERSON"])
+        
+        operators = {
+            "PHONE_NUMBER": OperatorConfig("replace", {"new_value": "<PHONE>"}), 
+            "PERSON": OperatorConfig("replace", {"new_value": "<NAME>"})
+        }
+        
         anonymized = anonymizer.anonymize(
             text=test_text,
             analyzer_results=results,
-            operators={"PHONE_NUMBER": {"type": "replace", "new_value": "<PHONE>"}, 
-                      "PERSON": {"type": "replace", "new_value": "<NAME>"}}
+            operators=operators
         )
         
         print(f"脱敏: {anonymized.text}")
