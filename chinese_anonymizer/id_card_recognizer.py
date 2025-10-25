@@ -12,5 +12,5 @@ class ChineseIdCardRecognizer(PatternRecognizer):
         super().__init__(
             supported_entity="ID_CARD",
             patterns=id_card_patterns,
-            supported_language="zh"
+            supported_language="en"
         )

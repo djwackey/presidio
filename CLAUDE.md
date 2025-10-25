@@ -34,6 +34,10 @@ python main.py
 - `chinese_anonymizer/` - Main package containing:
   - `person_recognizer.py`: Chinese name recognition using common surname patterns
   - `phone_recognizer.py`: Chinese phone number recognition using regex patterns
+  - `id_card_recognizer.py`: Chinese ID card number recognition
+  - `address_recognizer.py`: Chinese address recognition
+  - `inpatient_recognizer.py`: Inpatient medical record recognition
+  - `outpatient_recognizer.py`: Outpatient medical record recognition
   - `anonymizer.py`: Main anonymization engine integration with Presidio
 
 ### Entry Points
