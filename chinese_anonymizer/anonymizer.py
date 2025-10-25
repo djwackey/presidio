@@ -44,7 +44,7 @@ class ChineseAnonymizer:
         registry.add_recognizer(ChineseAddressRecognizer())
 
         # 获取默认识别器并添加到注册表
-        registry.load_predefined_recognizers()
+        # registry.load_predefined_recognizers()
 
         # 创建支持中文的分析器
         analyzer = AnalyzerEngine(registry=registry, supported_languages=["en"])
@@ -112,4 +112,10 @@ class ChineseAnonymizer:
             脱敏后的文本结果
         """
         analyzer_results = self.analyze(text=text, entities=entities, language=language)
+        print("检测到的实体:")
+        for result in analyzer_results:
+            print(
+                f"  - 类型: {result.entity_type}, 文本: '{text[result.start:result.end]}', 位置: {result.start}-{result.end}, 置信度: {result.score:.2f}"
+            )
+        print()
         return self.anonymize(text=text, analyzer_results=analyzer_results, anonymize_entities=anonymize_entities)
