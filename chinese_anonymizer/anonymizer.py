@@ -34,6 +34,7 @@ class ChineseAnonymizer:
 
         # 创建识别器注册表
         registry = RecognizerRegistry()
+        registry.supported_languages = ["zh"]
 
         # 添加中文识别器
         registry.add_recognizer(ChineseIdCardRecognizer())
@@ -47,11 +48,22 @@ class ChineseAnonymizer:
         # registry.load_predefined_recognizers()
 
         # 创建支持中文的分析器
-        analyzer = AnalyzerEngine(registry=registry, supported_languages=["en"])
+        nlp_configuration = {
+            # spaCy官方提供的最小中文模型
+            # "nlp_engine_name": "spacy",
+            # "models": [{"lang_code": "zh", "model_name": "zh_core_web_sm"}],
+            "nlp_engine_name": "spacy",
+            "models": [{"lang_code": "zh", "model_name": "zh_core_web_lg"}],
+        }
+        provider = NlpEngineProvider(nlp_configuration=nlp_configuration)
+        nlp_engine = provider.create_engine()
+        analyzer = AnalyzerEngine(
+            default_score_threshold=0.5, nlp_engine=nlp_engine, registry=registry, supported_languages=["zh"]
+        )
 
         return analyzer
 
-    def analyze(self, text: str, entities: Optional[List[str]] = None, language: str = "en"):
+    def analyze(self, text: str, entities: Optional[List[str]] = None, language: str = "zh"):
         """
         分析文本中的敏感实体
 
@@ -97,7 +109,7 @@ class ChineseAnonymizer:
         text: str,
         entities: Optional[List[str]] = None,
         anonymize_entities: Optional[Dict[str, str]] = None,
-        language: str = "en",
+        language: str = "zh",
     ):
         """
         一步完成文本分析和脱敏

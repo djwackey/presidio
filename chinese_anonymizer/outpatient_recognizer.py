@@ -7,4 +7,4 @@ class ChineseOutpatientRecognizer(PatternRecognizer):
             Pattern(name="outpatient", regex=r"\bMZ\d{6,10}\b", score=0.8),
             Pattern(name="outpatient_chinese", regex=r"\b门诊\d{6,10}\b", score=0.8),
         ]
-        super().__init__(supported_entity="OUTPATIENT_NO", patterns=outpatient_patterns, supported_language="en")
+        super().__init__(supported_entity="OUTPATIENT_NO", patterns=outpatient_patterns, supported_language="zh")

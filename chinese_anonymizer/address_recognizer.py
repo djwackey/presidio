@@ -10,4 +10,4 @@ class ChineseAddressRecognizer(PatternRecognizer):
                 score=0.85,
             )
         ]
-        super().__init__(supported_entity="ADDRESS", patterns=address_patterns, supported_language="en")
+        super().__init__(supported_entity="ADDRESS", patterns=address_patterns, supported_language="zh")
