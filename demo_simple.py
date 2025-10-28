@@ -19,6 +19,7 @@ def main(text: str):
         "PHONE_NUMBER": "<PHONE>",
         "INPATIENT_NO": "<INPATIENT>",
         "OUTPATIENT_NO": "<OUTPATIENT>",
+        "PAYMENT_AMOUNT": "<PAYMENT>"
     }
 
     # 执行匿名化

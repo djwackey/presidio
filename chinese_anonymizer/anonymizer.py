@@ -7,16 +7,21 @@ from typing import Dict, List, Optional
 
 from presidio_analyzer import AnalyzerEngine, RecognizerRegistry
 from presidio_analyzer.nlp_engine import NlpEngineProvider
-from presidio_anonymizer.entities import OperatorConfig
 from presidio_anonymizer import AnonymizerEngine
+from presidio_anonymizer.entities import OperatorConfig
 
 from .address_recognizer import ChineseAddressRecognizer
+from .bank_card_recognizer import ChineseBankCardRecognizer
+from .datetime_recognizer import ChineseDateTimeRecognizer
 from .id_card_recognizer import ChineseIdCardRecognizer
 from .inpatient_recognizer import ChineseInpatientRecognizer
 from .outpatient_recognizer import ChineseOutpatientRecognizer
+from .payment_amount_recognizer import ChinesePaymentAmountRecognizer
+from .payment_password_recognizer import ChinesePaymentPasswordRecognizer
 from .person_recognizer import ChinesePersonRecognizer
 from .phone_recognizer import ChinesePhoneRecognizer
-
+from .settlement_recognizer import ChineseSettlementRecognizer
+from .medical_test_recognizer import ChineseMedicalTestRecognizer
 
 class ChineseAnonymizer:
     """
@@ -43,6 +48,12 @@ class ChineseAnonymizer:
         registry.add_recognizer(ChineseInpatientRecognizer())
         registry.add_recognizer(ChineseOutpatientRecognizer())
         registry.add_recognizer(ChineseAddressRecognizer())
+        registry.add_recognizer(ChineseBankCardRecognizer())
+        registry.add_recognizer(ChineseSettlementRecognizer())
+        registry.add_recognizer(ChinesePaymentPasswordRecognizer())
+        registry.add_recognizer(ChinesePaymentAmountRecognizer())
+        registry.add_recognizer(ChineseDateTimeRecognizer())
+        registry.add_recognizer(ChineseMedicalTestRecognizer())
 
         # 获取默认识别器并添加到注册表
         # registry.load_predefined_recognizers()
@@ -50,10 +61,10 @@ class ChineseAnonymizer:
         # 创建支持中文的分析器
         nlp_configuration = {
             # spaCy官方提供的最小中文模型
-            # "nlp_engine_name": "spacy",
-            # "models": [{"lang_code": "zh", "model_name": "zh_core_web_sm"}],
             "nlp_engine_name": "spacy",
-            "models": [{"lang_code": "zh", "model_name": "zh_core_web_lg"}],
+            "models": [{"lang_code": "zh", "model_name": "zh_core_web_sm"}],
+            # "nlp_engine_name": "spacy",
+            # "models": [{"lang_code": "zh", "model_name": "zh_core_web_lg"}],
         }
         provider = NlpEngineProvider(nlp_configuration=nlp_configuration)
         nlp_engine = provider.create_engine()
