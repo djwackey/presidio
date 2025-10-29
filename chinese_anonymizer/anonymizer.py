@@ -23,37 +23,51 @@ from .phone_recognizer import ChinesePhoneRecognizer
 from .settlement_recognizer import ChineseSettlementRecognizer
 from .medical_test_recognizer import ChineseMedicalTestRecognizer
 
+
 class ChineseAnonymizer:
     """
     中文文本脱敏引擎
     Chinese Text Anonymization Engine
     """
 
-    def __init__(self):
+    def __init__(self, profile_name="default"):
         """初始化中文脱敏引擎"""
-        self.analyzer = self._setup_analyzer()
+        self.profile_name = profile_name
+        self.analyzer = None
         self.anonymizer = AnonymizerEngine()
 
-    def _setup_analyzer(self) -> AnalyzerEngine:
-        """设置分析器，包含中文语言支持和自定义识别器"""
+    async def init(self):
+        self.analyzer = await self._setup_analyzer()
 
+    async def _setup_analyzer(self) -> AnalyzerEngine:
+        """设置分析器，包含中文语言支持和自定义识别器"""
         # 创建识别器注册表
         registry = RecognizerRegistry()
         registry.supported_languages = ["zh"]
 
-        # 添加中文识别器
-        registry.add_recognizer(ChineseIdCardRecognizer())
-        registry.add_recognizer(ChinesePhoneRecognizer())
-        registry.add_recognizer(ChinesePersonRecognizer())
-        registry.add_recognizer(ChineseInpatientRecognizer())
-        registry.add_recognizer(ChineseOutpatientRecognizer())
-        registry.add_recognizer(ChineseAddressRecognizer())
-        registry.add_recognizer(ChineseBankCardRecognizer())
-        registry.add_recognizer(ChineseSettlementRecognizer())
-        registry.add_recognizer(ChinesePaymentPasswordRecognizer())
-        registry.add_recognizer(ChinesePaymentAmountRecognizer())
-        registry.add_recognizer(ChineseDateTimeRecognizer())
-        registry.add_recognizer(ChineseMedicalTestRecognizer())
+        # 从数据库加载识别器配置
+        try:
+            from .db_connector import DatabaseConnector
+            import importlib
+
+            db = DatabaseConnector()
+            profile = await db.get_profile_settings(profile_name=self.profile_name)
+            await db.close()
+            if not profile:
+                raise ValueError("Profile not found.Fallback to hardcoded recognizers")
+
+            for recognizer in profile["recognizers"]:
+                try:
+                    class_name = recognizer["class_name"]
+                    module_path = recognizer["module_path"]
+                    module = importlib.import_module(module_path)
+                    recognizer_cls = getattr(module, class_name)
+                    registry.add_recognizer(recognizer_cls())
+                except (ImportError, AttributeError) as e:
+                    print(f"Error loading recognizer {recognizer['id']}: {e}")
+        except Exception as e:
+            print(f"Database error: {e}. Using default recognizers.")
+            self._add_default_recognizers(registry)
 
         # 获取默认识别器并添加到注册表
         # registry.load_predefined_recognizers()
@@ -73,6 +87,21 @@ class ChineseAnonymizer:
         )
 
         return analyzer
+
+    def _add_default_recognizers(self, registry):
+        """Add default hardcoded recognizers as fallback"""
+        registry.add_recognizer(ChineseIdCardRecognizer())
+        registry.add_recognizer(ChinesePhoneRecognizer())
+        registry.add_recognizer(ChinesePersonRecognizer())
+        registry.add_recognizer(ChineseInpatientRecognizer())
+        registry.add_recognizer(ChineseOutpatientRecognizer())
+        registry.add_recognizer(ChineseAddressRecognizer())
+        registry.add_recognizer(ChineseBankCardRecognizer())
+        registry.add_recognizer(ChineseSettlementRecognizer())
+        registry.add_recognizer(ChinesePaymentPasswordRecognizer())
+        registry.add_recognizer(ChinesePaymentAmountRecognizer())
+        registry.add_recognizer(ChineseDateTimeRecognizer())
+        registry.add_recognizer(ChineseMedicalTestRecognizer())
 
     def analyze(self, text: str, entities: Optional[List[str]] = None, language: str = "zh"):
         """

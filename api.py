@@ -1,11 +1,21 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from chinese_anonymizer.anonymizer import ChineseAnonymizer
 
-app = FastAPI(title="Medical Data De-identification API")
+from chinese_anonymizer.anonymizer import ChineseAnonymizer
 
 # Initialize the Chinese anonymizer
 anonymizer = ChineseAnonymizer()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await anonymizer.init()
+    yield
+
+
+app = FastAPI(title="Medical Data De-identification API", lifespan=lifespan)
 
 
 class AnonymizeRequest(BaseModel):

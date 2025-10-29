@@ -9,7 +9,7 @@ from chinese_anonymizer.anonymizer import ChineseAnonymizer
 
 def main(text: str):
     # 创建 ChineseAnonymizer 实例
-    anonymizer = ChineseAnonymizer()
+    anonymizer = ChineseAnonymizer(profile_name="medical_records")
 
     # 定义要匿名化的实体和替换的标签
     anonymize_entities = {
