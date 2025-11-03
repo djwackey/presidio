@@ -161,7 +161,7 @@ class DatabaseConnector:
                     "anonymized_text": anonymized_text,
                     "openai_response": json.dumps(openai_result),
                     "detected_entities": json.dumps(detected_entities),
-                    "validation_passed": not openai_result.get("contains_pii", True),
+                    "validation_passed": not openai_result.get("pii_leak_detected", True),
                 }
                 await session.execute(query, params)
                 await session.commit()

@@ -1,12 +1,15 @@
-from contextlib import asynccontextmanager
-
-from fastapi import FastAPI, HTTPException, BackgroundTasks
-from pydantic import BaseModel
-import openai
 import json
 import os
+from contextlib import asynccontextmanager
+
+import openai
+from dotenv import load_dotenv
+from fastapi import BackgroundTasks, FastAPI, HTTPException
+from pydantic import BaseModel
 
 from chinese_anonymizer.anonymizer import ChineseAnonymizer
+
+load_dotenv()
 
 # Initialize the Chinese anonymizer
 anonymizer = ChineseAnonymizer()
@@ -54,6 +57,7 @@ async def anonymize_text(request: AnonymizeRequest, background_tasks: Background
                 }
             )
 
+        # await validate_and_store(request.text, anonymized_result.text, detected_entities)
         background_tasks.add_task(validate_and_store, request.text, anonymized_result.text, detected_entities)
         return AnonymizeResponse(
             original_text=request.text, anonymized_text=anonymized_result.text, detected_entities=detected_entities
@@ -62,20 +66,35 @@ async def anonymize_text(request: AnonymizeRequest, background_tasks: Background
         raise HTTPException(status_code=500, detail=str(e))
 
 
-def validate_and_store(original_text: str, anonymized_text: str, detected_entities: list):
+async def validate_and_store(original_text: str, anonymized_text: str, detected_entities: list):
     """Validate anonymized text using OpenAI and store results in database"""
     try:
         # Initialize OpenAI client
-        client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        client = openai.AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"), base_url=os.getenv("OPENAI_BASE_URL"))
 
         # Create validation prompt
-        prompt = f"""Check if the following text contains any personally identifiable information (PII) that should have been removed during anonymization. The original text was anonymized to remove names, phone numbers, ID numbers, addresses, and medical records. Respond with a JSON object containing 'contains_pii': boolean and 'identified_pii': array of strings with any detected PII elements.
+        prompt = f"""你的任务是对比以下两段文本，判断匿名化处理是否完全成功。
 
-Anonymized text: {anonymized_text}"""
+请仔细检查匿名化后的文本中，是否仍然存在任何可能识别个人身份的信息（PII），包括但不限于姓名、地址、电话号码、身份证号、邮箱、账号信息、组织名称或其他可关联个体的细节。
+
+请严格只根据文本内容进行判断，不进行推测或补全。
+
+请以 JSON 格式返回结果，结构如下：
+{{
+  "pii_leak_detected": True 或 False,
+  "description": "若为 True，请简要说明发现的可能PII线索；若为 False，请说明匿名化看起来完整无误。",
+  "evidence_snippets": ["列出可疑文本片段，如无则为空数组"]
+}}
+
+原始文本如下：
+{original_text}
+
+匿名化后的文本如下：
+{anonymized_text}"""
 
         # Call OpenAI API
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+        response = await client.chat.completions.create(
+            model=os.getenv("OPENAI_MODEL_NAME"),
             messages=[
                 {"role": "system", "content": "You are a PII validation assistant. Respond ONLY with valid JSON."},
                 {"role": "user", "content": prompt},

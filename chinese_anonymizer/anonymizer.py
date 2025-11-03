@@ -68,18 +68,15 @@ class ChineseAnonymizer:
                     # print(f"[module_path] {module_path}")
                     module = importlib.import_module(module_path)
                     recognizer_cls = getattr(module, class_name)
-                    print(f"[recognizer] {recognizer}")
-                    print(f"[anonymize_entities] {self.anonymize_entities}")
+                    # print(f"[recognizer] {recognizer}")
+                    # print(f"[anonymize_entities] {self.anonymize_entities}")
 
                     # Handle dynamic recognizer configuration
                     if class_name == "DynamicRecognizer":
                         # Convert pattern dicts to Pattern objects
                         pattern_objects = [
-                            Pattern(
-                                name=p["name"],
-                                regex=p["regex"],
-                                score=p["score"]
-                            ) for p in recognizer.get("patterns", [])
+                            Pattern(name=p["name"], regex=p["regex"], score=p["score"])
+                            for p in recognizer.get("patterns", [])
                         ]
 
                         # Create DynamicRecognizer instance with parameters

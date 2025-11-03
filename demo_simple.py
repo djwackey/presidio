@@ -20,7 +20,7 @@ async def main(text: str):
 
 if __name__ == "__main__":
     ehr_data = []
-    with open("testcases.json", "r") as f:
+    with open("tests/testcases.json", "r") as f:
         ehr_data = json.loads(f.read())
 
     for text in ehr_data:
