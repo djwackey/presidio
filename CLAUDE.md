@@ -38,6 +38,7 @@ python main.py
   - `address_recognizer.py`: Chinese address recognition
   - `inpatient_recognizer.py`: Inpatient medical record recognition
   - `outpatient_recognizer.py`: Outpatient medical record recognition
+  - `dynamic_recognizer.py`: Dynamic recognizer that loads patterns and configurations from database
   - `anonymizer.py`: Main anonymization engine integration with Presidio
 
 ### Entry Points

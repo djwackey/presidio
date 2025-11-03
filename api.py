@@ -31,20 +31,11 @@ class AnonymizeResponse(BaseModel):
 @app.post("/anonymize", response_model=AnonymizeResponse)
 async def anonymize_text(request: AnonymizeRequest):
     # 定义要匿名化的实体和替换的标签
-    anonymize_entities = {
-        "PERSON": "<NAME>",
-        "ADDRESS": "<ADDRESS>",
-        "ID_CARD": "<ID_CARD>",
-        "PHONE_NUMBER": "<PHONE>",
-        "INPATIENT_NO": "<INPATIENT>",
-        "OUTPATIENT_NO": "<OUTPATIENT>",
-        "PAYMENT_AMOUNT": "<PAYMENT>",
-    }
     try:
         # Analyze and anonymize the text
         anonymized_result = anonymizer.anonymize_text(
             text=request.text,
-            anonymize_entities=anonymize_entities,
+            anonymize_entities=anonymizer.anonymize_entities,
         )
 
         # Extract detected entities for response

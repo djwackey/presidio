@@ -56,13 +56,45 @@ class ChineseAnonymizer:
             if not profile:
                 raise ValueError("Profile not found.Fallback to hardcoded recognizers")
 
+            self.anonymize_entities = profile.get("anonymize_entities", {})
+
+            from presidio_analyzer import Pattern
+
             for recognizer in profile["recognizers"]:
                 try:
                     class_name = recognizer["class_name"]
                     module_path = recognizer["module_path"]
+                    # print(f"[class_name] {class_name}")
+                    # print(f"[module_path] {module_path}")
                     module = importlib.import_module(module_path)
                     recognizer_cls = getattr(module, class_name)
-                    registry.add_recognizer(recognizer_cls())
+                    print(f"[recognizer] {recognizer}")
+                    print(f"[anonymize_entities] {self.anonymize_entities}")
+
+                    # Handle dynamic recognizer configuration
+                    if class_name == "DynamicRecognizer":
+                        # Convert pattern dicts to Pattern objects
+                        pattern_objects = [
+                            Pattern(
+                                name=p["name"],
+                                regex=p["regex"],
+                                score=p["score"]
+                            ) for p in recognizer.get("patterns", [])
+                        ]
+
+                        # Create DynamicRecognizer instance with parameters
+                        instance = recognizer_cls(
+                            name=f"Dynamic_{recognizer['id']}",
+                            patterns=pattern_objects,
+                            context=recognizer.get("context", []),
+                            supported_entity=recognizer.get("supported_entity", ""),
+                            supported_language="zh",
+                            # score_threshold=recognizer.get("score_threshold", 0.5)
+                        )
+                        registry.add_recognizer(instance)
+                    else:
+                        # Regular recognizer instantiation
+                        registry.add_recognizer(recognizer_cls())
                 except (ImportError, AttributeError) as e:
                     print(f"Error loading recognizer {recognizer['id']}: {e}")
         except Exception as e:

@@ -15,16 +15,6 @@ def main():
     # 创建 ChineseAnonymizer 实例
     anonymizer = ChineseAnonymizer()
 
-    # 定义要匿名化的实体和替换的标签
-    anonymize_entities = {
-        "PERSON": "<NAME>",
-        "ADDRESS": "<ADDRESS>",
-        "ID_CARD": "<ID_CARD>",
-        "PHONE_NUMBER": "<PHONE>",
-        "INPATIENT_NO": "<INPATIENT>",
-        "OUTPATIENT_NO": "<OUTPATIENT>",
-    }
-
     test_cases = [
         "患者李明，联系电话：15912345678",
         "王小红女士的手机号是13612345678",
@@ -38,7 +28,7 @@ def main():
         print(f"原文: {text}")
 
         # 执行匿名化
-        anonymized_text = anonymizer.anonymize_text(text=text, anonymize_entities=anonymize_entities)
+        anonymized_text = anonymizer.anonymize_text(text=text, anonymize_entities=anonymizer.anonymize_entities)
         print(f"脱敏: {anonymized_text.text}")
 
 

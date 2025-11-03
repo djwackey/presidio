@@ -41,33 +41,6 @@ class DatabaseConnector:
 
         async with self.session() as session:
             try:
-                # if profile_id:
-                #     query = text(
-                #         """
-                #     SELECT rt.module_path, rt.class_name, prs.enabled, prs.parameters, prs.priority
-                #     FROM anonymizer_profiles ap
-                #     JOIN profile_recognizer_settings prs ON ap.id = prs.profile_id
-                #     JOIN recognizer_types rt ON prs.recognizer_id = rt.id
-                #     WHERE ap.id = :profile_id AND prs.enabled = :enabled
-                #     ORDER BY prs.priority
-                #     """
-                #     )
-                #     params = {"profile_id": profile_id, "enabled": 1}
-                # elif profile_name:
-                #     query = text(
-                #         """
-                #     SELECT rt.module_path, rt.class_name, prs.enabled, prs.parameters, prs.priority
-                #     FROM anonymizer_profiles ap
-                #     JOIN profile_recognizer_settings prs ON ap.id = prs.profile_id
-                #     JOIN recognizer_types rt ON prs.recognizer_id = rt.id
-                #     WHERE ap.name = :profile_name AND prs.enabled = :enabled
-                #     ORDER BY prs.priority
-                #     """
-                #     )
-                #     params = {"profile_name": profile_name, "enabled": 1}
-                # else:
-                #     return None
-
                 query = text(
                     """SELECT
                         ap.id,
@@ -76,6 +49,8 @@ class DatabaseConnector:
                         ap.is_default,
                         rt.module_path,
                         rt.class_name,
+                        rt.entity_type,
+                        rt.replacement,
                         prs.parameters,
                         prs.priority,
                         prs.recognizer_id
@@ -101,20 +76,27 @@ class DatabaseConnector:
                     "recognizers": [],
                 }
 
+                anonymize_entities = {}
                 for row in rows:
+                    anonymize_entities[row.entity_type] = row.replacement
+                    params = json.loads(row.parameters) if row.parameters else {}
                     profile["recognizers"].append(
                         {
                             "id": row.recognizer_id,
                             "priority": row.priority,
                             "class_name": row.class_name,
-                            "parameters": row.parameters,
                             "module_path": row.module_path,
+                            "context": params.get("context", []),
+                            "patterns": params.get("patterns", []),
+                            "score_threshold": params.get("score_threshold", 0.5),
+                            "supported_entity": params.get("supported_entity", ""),
                         }
                     )
 
+                profile["anonymize_entities"] = anonymize_entities
+
                 return profile
-            # except SQLAlchemyError as e:
-            except ValueError as e:
+            except SQLAlchemyError as e:
                 print(f"Database error: {e}")
                 return None
 
