@@ -146,3 +146,25 @@ class DatabaseConnector:
             except SQLAlchemyError as e:
                 await session.rollback()
                 raise ValueError(f"Failed to add recognizer to profile: {e}") from e
+
+    async def add_validation_result(self, original_text, anonymized_text, openai_result, detected_entities):
+        async with self.session() as session:
+            try:
+                query = text(
+                    """INSERT INTO anonymization_validation
+            (original_text, anonymized_text, detected_entities, openai_response, validation_passed)
+            VALUES (:original_text, :anonymized_text, :detected_entities, :openai_response, :validation_passed)"""
+                )
+
+                params = {
+                    "original_text": original_text,
+                    "anonymized_text": anonymized_text,
+                    "openai_response": json.dumps(openai_result),
+                    "detected_entities": json.dumps(detected_entities),
+                    "validation_passed": not openai_result.get("contains_pii", True),
+                }
+                await session.execute(query, params)
+                await session.commit()
+            except SQLAlchemyError as e:
+                await session.rollback()
+                raise ValueError(f"Failed to add validation result: {e}") from e
