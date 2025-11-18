@@ -32,9 +32,9 @@ class ChineseAnonymizer:
 
     def __init__(self, profile_name="default"):
         """初始化中文脱敏引擎"""
-        self.profile_name = profile_name
         self.analyzer = None
         self.anonymizer = AnonymizerEngine()
+        self.profile_name = profile_name
 
     async def init(self):
         self.analyzer = await self._setup_analyzer()

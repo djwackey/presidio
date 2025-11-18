@@ -1,15 +1,21 @@
 import json
 import os
+import time
 from contextlib import asynccontextmanager
 
 import openai
 from dotenv import load_dotenv
 from fastapi import BackgroundTasks, FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 from chinese_anonymizer.anonymizer import ChineseAnonymizer
+from logger import loggers
 
 load_dotenv()
+
+LOG_PATH = os.getenv("LOG_PATH")
+LOG_LEVEL = os.getenv("LOG_LEVEL")
+PROJECT_NAME = os.getenv("PROJECT_NAME")
 
 # Initialize the Chinese anonymizer
 anonymizer = ChineseAnonymizer()
@@ -23,9 +29,17 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Medical Data De-identification API", lifespan=lifespan)
 
+loggers.init_config(PROJECT_NAME, LOG_PATH, LOG_LEVEL)
+
 
 class AnonymizeRequest(BaseModel):
-    text: str
+    text: str = Field(..., min_length=1, description="脱敏文本不能为空")
+
+    @field_validator("text")
+    def not_blank(cls, v):
+        if not v.strip():
+            raise ValueError("脱敏文本不能为空或仅包含空格")
+        return v
 
 
 class AnonymizeResponse(BaseModel):
@@ -38,6 +52,7 @@ class AnonymizeResponse(BaseModel):
 async def anonymize_text(request: AnonymizeRequest, background_tasks: BackgroundTasks):
     # 定义要匿名化的实体和替换的标签
     try:
+        start_time = time.perf_counter()
         # Analyze and anonymize the text
         anonymized_result = anonymizer.anonymize_text(
             text=request.text,
@@ -59,8 +74,12 @@ async def anonymize_text(request: AnonymizeRequest, background_tasks: Background
 
         # await validate_and_store(request.text, anonymized_result.text, detected_entities)
         background_tasks.add_task(validate_and_store, request.text, anonymized_result.text, detected_entities)
+        elapsed_time = round(time.perf_counter() - start_time, 4)
         return AnonymizeResponse(
-            original_text=request.text, anonymized_text=anonymized_result.text, detected_entities=detected_entities
+            elapsed_time=elapsed_time,
+            original_text=request.text,
+            anonymized_text=anonymized_result.text,
+            detected_entities=detected_entities,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -120,4 +139,4 @@ async def validate_and_store(original_text: str, anonymized_text: str, detected_
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=9000)
