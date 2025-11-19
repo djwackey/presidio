@@ -7,7 +7,9 @@ Faker>=25.0.0
 loguru==0.7.3
 openai==2.6.0
 fastapi>=0.95.0
+PyMuPDF==1.26.6
 uvicorn>=0.23.0
 SQLAlchemy==2.0.44
 aiomysql==0.3.2
 python-dotenv==1.2.1
+python-multipart==0.0.20

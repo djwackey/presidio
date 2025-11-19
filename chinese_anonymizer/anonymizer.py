@@ -53,6 +53,7 @@ class ChineseAnonymizer:
             db = DatabaseConnector()
             profile = await db.get_profile_settings(profile_name=self.profile_name)
             await db.close()
+            # raise
             if not profile:
                 raise ValueError("Profile not found.Fallback to hardcoded recognizers")
 
@@ -106,7 +107,6 @@ class ChineseAnonymizer:
             # spaCy官方提供的最小中文模型
             "nlp_engine_name": "spacy",
             "models": [{"lang_code": "zh", "model_name": "zh_core_web_sm"}],
-            # "nlp_engine_name": "spacy",
             # "models": [{"lang_code": "zh", "model_name": "zh_core_web_lg"}],
         }
         provider = NlpEngineProvider(nlp_configuration=nlp_configuration)
@@ -119,6 +119,19 @@ class ChineseAnonymizer:
 
     def _add_default_recognizers(self, registry):
         """Add default hardcoded recognizers as fallback"""
+        self.anonymize_entities = {
+            "ID_CARD": "<ID_CARD>",
+            "PHONE_NUMBER": "<PHONE>",
+            "PERSON": "<NAME>",
+            "ADDRESS": "<ADDRESS>",
+            "INPATIENT_NO": "<INPATIENT>",
+            "OUTPATIENT_NO": "<OUTPATIENT>",
+            "BANK_CARD": "<BANK_CARD>",
+            "SETTLEMENT_NO": "<SETTLEMENT_NO>",
+            "PAYMENT_AMOUNT": "<PAYMENT_AMOUNT>",
+            "PAYMENT_PASSWORD": "<PAYMENT_PASSWORD>",
+            "DATE_TIME": "<DATE_TIME>",
+        }
         registry.add_recognizer(ChineseIdCardRecognizer())
         registry.add_recognizer(ChinesePhoneRecognizer())
         registry.add_recognizer(ChinesePersonRecognizer())

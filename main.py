@@ -6,21 +6,24 @@ Chinese Text Anonymization Demo Script
 这个脚本演示如何使用 Presidio 对中文文本进行脱敏处理
 This script demonstrates how to use Presidio for Chinese text anonymization
 """
+import asyncio
 
 from chinese_anonymizer.anonymizer import ChineseAnonymizer
 
 
-def main():
+async def main():
     """主函数 - 演示脱敏功能"""
     # 创建 ChineseAnonymizer 实例
     anonymizer = ChineseAnonymizer()
+    await anonymizer.init()
 
     test_cases = [
-        "患者李明，联系电话：15912345678",
-        "王小红女士的手机号是13612345678",
+        # "患者李明，联系电话：15912345678",
+        # "王小红女士的手机号是13612345678",
         "赵刚先生，电话 138-1234-5678",
-        "张三，男，45岁。电话：13800138000。诊断结果：高血压。",
-        "患者王五，住院号：ZY12345678，诊断结果：糖尿病",
+        # "张三，男，45岁。电话：13800138000。诊断结果：高血压。",
+        # "患者王五，住院号：ZY12345678，诊断结果：糖尿病",
+        # "张三的电话号码是13800138000，身份证号是110101199001011234",
     ]
 
     for i, text in enumerate(test_cases, 1):
@@ -33,4 +36,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

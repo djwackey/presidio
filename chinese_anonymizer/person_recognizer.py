@@ -256,7 +256,7 @@ class ChinesePersonRecognizer(PatternRecognizer):
         # 姓氏 + 1-2个字的名字，在句首或标点后
         Pattern(
             "CHINESE_NAME_PATTERN",
-            rf"(?<=^|[，。！？\s])({surnames_pattern})[\u4e00-\u9fff]{{1,2}}(?=[，。！？\s]|$)",
+            rf"(?<=^|[，。！？\s])({surnames_pattern})[\u4e00-\u9fff]{{1,2}}(?=[，。！？\s的]|$)",
             0.9,
         ),
         # 姓氏 + 名字 + 女士/先生/同志等称谓
@@ -267,7 +267,7 @@ class ChinesePersonRecognizer(PatternRecognizer):
         ),
         # 两字姓名，增加上下文限制
         Pattern(
-            "CHINESE_TWO_CHAR_NAME", rf"(?<=^|[，。！？\s])({surnames_pattern})[\u4e00-\u9fff](?=[，。！？\s]|$)", 0.8
+            "CHINESE_TWO_CHAR_NAME", rf"(?<=^|[，。！？\s])({surnames_pattern})[\u4e00-\u9fff](?=[，。！？\s的]|$)", 0.8
         ),
     ]
 

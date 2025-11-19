@@ -6,7 +6,7 @@ class ChineseIdCardRecognizer(PatternRecognizer):
         id_card_patterns = [
             Pattern(
                 name="id_card",
-                regex=r"\b[1-9]\d{5}(19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\d{3}[\dXx]\b",
+                regex=r"[1-9]\d{5}(19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\d{3}[\dXx]",
                 score=0.95,
             )
         ]

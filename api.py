@@ -2,14 +2,17 @@ import json
 import os
 import time
 from contextlib import asynccontextmanager
+from io import BytesIO
 
+import fitz  # PyMuPDF
 import openai
 from dotenv import load_dotenv
-from fastapi import BackgroundTasks, FastAPI, HTTPException
+from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, field_validator
 
 from chinese_anonymizer.anonymizer import ChineseAnonymizer
-from logger import loggers
+from logger import log, loggers
 
 load_dotenv()
 
@@ -19,6 +22,27 @@ PROJECT_NAME = os.getenv("PROJECT_NAME")
 
 # Initialize the Chinese anonymizer
 anonymizer = ChineseAnonymizer()
+
+
+def extract_text_from_pdf(contents: bytes) -> str:
+    """Extract text from PDF file using PyMuPDF (extensible for future file types)"""
+    try:
+        doc = fitz.open(stream=BytesIO(contents), filetype="pdf")
+        text = ""
+        for page in doc:
+            text += page.get_text() + "\n"
+        return text.strip()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"PDF text extraction failed: {str(e)}")
+
+
+# Extensible file type mapping: add new extractors here for other file types
+FILE_EXTRACTORS = {
+    ".pdf": extract_text_from_pdf,
+    # Future examples:
+    # ".docx": extract_text_from_docx,
+    # ".txt": extract_text_from_plaintext
+}
 
 
 @asynccontextmanager
@@ -83,6 +107,61 @@ async def anonymize_text(request: AnonymizeRequest, background_tasks: Background
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/anonymize-pdf")
+async def anonymize_pdf(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
+    """Anonymize PDF file content and return as text stream"""
+    if not file.filename.lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Only PDF files are supported")
+
+    try:
+        # Read PDF content
+        contents = await file.read()
+        doc = fitz.open(stream=BytesIO(contents), filetype="pdf")
+
+        # Extract text from all pages
+        text = ""
+        for page in doc:
+            text += page.get_text() + "\n"
+
+        log.info(f"[original_text] {text}")
+
+        # Anonymize the text
+        anonymized_result = anonymizer.anonymize_text(
+            text=text,
+            anonymize_entities=anonymizer.anonymize_entities,
+        )
+
+        # Extract detected entities for response
+        detected_entities = []
+        for result in anonymizer.analyze(text):
+            detected_entities.append(
+                {
+                    "entity_type": result.entity_type,
+                    "text": text[result.start : result.end],
+                    "start": result.start,
+                    "end": result.end,
+                    "score": round(result.score, 2),
+                }
+            )
+
+        log.info(f"[anonymized_result] {anonymized_result.text}")
+        background_tasks.add_task(validate_and_store, text, anonymized_result.text, detected_entities)
+
+        # Create a BytesIO stream for the response
+        output = BytesIO()
+        output.write(anonymized_result.text.encode("utf-8"))
+        output.seek(0)
+
+        # Return as streaming response
+        return StreamingResponse(
+            output,
+            media_type="text/plain",
+            headers={"Content-Disposition": f"attachment; filename=anonymized_{file.filename.replace('.pdf', '.txt')}"},
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing PDF: {str(e)}")
 
 
 async def validate_and_store(original_text: str, anonymized_text: str, detected_entities: list):
